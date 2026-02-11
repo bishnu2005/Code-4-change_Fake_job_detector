@@ -1,0 +1,36 @@
+# Virtual Environment
+venv/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# ML Model artifacts (large files)
+ml_model/data/*.csv
+ml_model/saved_model/*.pkl
+ml_model/evaluation_plots/
+
+# Node.js / React
+frontend/node_modules/
+frontend/build/
+
+# Capacitor
+frontend/android/
+frontend/ios/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+pip_install_log.txt
+version_check.txt
