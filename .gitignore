@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+artifacts/model.pkl
+artifacts/vectorizer.pkl
+
+# Flutter
+.build/
+.dart_tool/
+android/.gradle/
+android/local.properties
+
+# OS
+.DS_Store
+Thumbs.db
