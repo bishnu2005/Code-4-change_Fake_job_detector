@@ -75,7 +75,7 @@ class _RiskIndicatorState extends State<RiskIndicator>
                       Icon(_getRiskIcon(), color: color, size: 32),
                       const SizedBox(height: 4),
                       Text(
-                        '${(_animation.value * 100).toStringAsFixed(0)}',
+                        (_animation.value * 100).toStringAsFixed(0),
                         style: TextStyle(
                           color: color,
                           fontSize: 36,

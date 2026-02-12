@@ -1,15 +1,68 @@
-# Python
+# ── Environment & Secrets ─────────────────────────────
+.env
+.env.*
+*.env
+!.env.example
+
+# ── Python ────────────────────────────────────────────
 __pycache__/
 *.pyc
-artifacts/model.pkl
-artifacts/vectorizer.pkl
+*.pyo
+*.egg-info/
+dist/
+build/
+*.egg
+.venv/
+venv/
+env/
 
-# Flutter
-.build/
+# ── ML Artifacts (large binary files) ─────────────────
+backend/artifacts/*.pkl
+backend/artifacts/*.joblib
+
+# ── Training Data ─────────────────────────────────────
+backend/data/*.csv
+backend/data/*.json
+!backend/data/.gitkeep
+
+# ── Flutter / Dart ────────────────────────────────────
 .dart_tool/
-android/.gradle/
-android/local.properties
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+build/
+mobile/build/
+mobile/.dart_tool/
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/app/debug/
+mobile/android/app/profile/
+mobile/android/app/release/
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/ios/Flutter/Flutter.framework
+mobile/ios/Flutter/Flutter.podspec
+mobile/.metadata
 
-# OS
+# ── IDE ───────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.swp
+*.swo
+*~
+
+# ── OS ────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+Desktop.ini
+ehthumbs.db
+
+# ── Logs ──────────────────────────────────────────────
+*.log
+logs/
+
+# ── Misc ──────────────────────────────────────────────
+*.bak
+*.tmp
+.gemini/

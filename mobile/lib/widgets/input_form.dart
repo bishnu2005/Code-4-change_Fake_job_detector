@@ -40,7 +40,7 @@ class _InputFormState extends State<InputForm> {
             controller: widget.salaryController,
             label: 'Salary',
             icon: Icons.attach_money,
-            hint: 'e.g., \$80,000 - \$120,000/year',
+            hint: 'e.g., ₹80,000 - ₹120,000/year',
           ),
           const SizedBox(height: 16),
           _buildField(
@@ -49,12 +49,6 @@ class _InputFormState extends State<InputForm> {
             icon: Icons.description,
             hint: 'Paste the full job posting text here...',
             maxLines: 6,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return 'Job description is required';
-              }
-              return null;
-            },
           ),
           const SizedBox(height: 16),
           _buildField(

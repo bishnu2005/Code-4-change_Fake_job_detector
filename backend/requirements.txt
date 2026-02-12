@@ -7,3 +7,11 @@ python-multipart>=0.0.6
 requests>=2.31.0
 Pillow>=10.0.0
 pytesseract>=0.3.10
+shap>=0.43.0
+aiohttp>=3.9.0
+dnspython>=2.4.0
+numpy>=1.24.0
+python-dotenv>=1.0.0
+python-whois>=0.9.4
+beautifulsoup4>=4.12.0
+
