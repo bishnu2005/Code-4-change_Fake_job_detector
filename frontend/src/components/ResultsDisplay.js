@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
+import ReportModal from './ReportModal';
 
 function ResultsDisplay({ data }) {
+  const [showReport, setShowReport] = useState(false);
   const {
     prediction,
     fraud_probability,
@@ -95,6 +97,123 @@ function ResultsDisplay({ data }) {
         )}
       </div>
 
+      {/* Email Domain Analysis */}
+      {risk_breakdown.email_analysis && (
+        <div className="card">
+          <div className="card-header">
+            <span className="card-header-icon">📧</span>
+            <h2>Email Domain Verification</h2>
+          </div>
+          {risk_breakdown.email_analysis.email_found ? (
+            <div className="email-analysis">
+              <div className="email-domain-row">
+                <span className="email-label">Email:</span>
+                <span className="email-value">{risk_breakdown.email_analysis.email}</span>
+              </div>
+              <div className="email-domain-row">
+                <span className="email-label">Domain:</span>
+                <span className="email-value">{risk_breakdown.email_analysis.email_domain}</span>
+              </div>
+              <div className="email-badges">
+                {risk_breakdown.email_analysis.free_provider && (
+                  <span className="email-badge badge-danger">⚠ Free Email Provider</span>
+                )}
+                {!risk_breakdown.email_analysis.domain_matches_company && (
+                  <span className="email-badge badge-warning">⚠ Domain Mismatch</span>
+                )}
+                {risk_breakdown.email_analysis.suspicious_pattern && (
+                  <span className="email-badge badge-danger">🚨 Lookalike Domain</span>
+                )}
+                {!risk_breakdown.email_analysis.free_provider &&
+                 risk_breakdown.email_analysis.domain_matches_company &&
+                 !risk_breakdown.email_analysis.suspicious_pattern && (
+                  <span className="email-badge badge-safe">✓ Domain Verified</span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <p className="no-keywords">No email address found in posting</p>
+          )}
+        </div>
+      )}
+
+      {/* URL Legitimacy Analysis */}
+      {risk_breakdown.url_analysis && risk_breakdown.url_analysis.url_provided && (
+        <div className="card">
+          <div className="card-header">
+            <span className="card-header-icon">🌐</span>
+            <h2>URL Legitimacy Analysis</h2>
+          </div>
+          <div className="email-analysis">
+            <div className="email-domain-row">
+              <span className="email-label">URL:</span>
+              <span className="email-value">{risk_breakdown.url_analysis.url}</span>
+            </div>
+            <div className="email-domain-row">
+              <span className="email-label">Domain:</span>
+              <span className="email-value">{risk_breakdown.url_analysis.domain}</span>
+            </div>
+            <div className="email-badges">
+              {risk_breakdown.url_analysis.ip_based && (
+                <span className="email-badge badge-danger">🚨 IP-Based URL</span>
+              )}
+              {risk_breakdown.url_analysis.free_hosting && (
+                <span className="email-badge badge-danger">⚠ Free Hosting</span>
+              )}
+              {!risk_breakdown.url_analysis.dns_resolves && (
+                <span className="email-badge badge-danger">❌ DNS Failure</span>
+              )}
+              {risk_breakdown.url_analysis.ssl_error && (
+                <span className="email-badge badge-warning">🔓 SSL Error</span>
+              )}
+              {risk_breakdown.url_analysis.numeric_substitutions && (
+                <span className="email-badge badge-danger">🔢 Lookalike Domain</span>
+              )}
+              {!risk_breakdown.url_analysis.domain_matches_company && (
+                <span className="email-badge badge-warning">⚠ Domain Mismatch</span>
+              )}
+              {risk_breakdown.url_analysis.excessive_subdomains && (
+                <span className="email-badge badge-warning">🔗 Excessive Subdomains</span>
+              )}
+              {risk_breakdown.url_analysis.suspicious_keywords &&
+                risk_breakdown.url_analysis.suspicious_keywords.length > 0 && (
+                <span className="email-badge badge-danger">🚩 Suspicious Keywords</span>
+              )}
+              {risk_breakdown.url_analysis.reachable &&
+               risk_breakdown.url_analysis.dns_resolves &&
+               !risk_breakdown.url_analysis.ip_based &&
+               !risk_breakdown.url_analysis.free_hosting &&
+               !risk_breakdown.url_analysis.numeric_substitutions &&
+               !risk_breakdown.url_analysis.ssl_error && (
+                <span className="email-badge badge-safe">✓ URL Verified</span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Community Reports */}
+      {risk_breakdown.community_reports && risk_breakdown.community_reports.total_reports > 0 && (
+        <div className="card">
+          <div className="card-header">
+            <span className="card-header-icon">👥</span>
+            <h2>Community Reports</h2>
+          </div>
+          {(() => {
+            const count = risk_breakdown.community_reports.total_reports;
+            let bannerClass = 'community-banner-yellow';
+            if (count >= 10) bannerClass = 'community-banner-red';
+            else if (count >= 5) bannerClass = 'community-banner-orange';
+            return (
+              <div className={`community-banner ${bannerClass}`}>
+                <span className="community-icon">🚨</span>
+                <span>This entity has been reported <strong>{count}</strong> time{count !== 1 ? 's' : ''} by community users.</span>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
       {/* Recommendations */}
       {recommendations && recommendations.length > 0 && (
         <div className="card">
@@ -108,6 +227,23 @@ function ResultsDisplay({ data }) {
             ))}
           </ul>
         </div>
+      )}
+
+      {/* Report Button */}
+      <button
+        className="report-btn"
+        onClick={() => setShowReport(true)}
+      >
+        🚩 Report This as Scam
+      </button>
+
+      {/* Report Modal */}
+      {showReport && (
+        <ReportModal
+          entityType="company"
+          entityValue={risk_breakdown.email_analysis?.email || risk_breakdown.url_analysis?.domain || 'unknown'}
+          onClose={() => setShowReport(false)}
+        />
       )}
     </div>
   );

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import JobForm from './components/JobForm';
 import ImageUpload from './components/ImageUpload';
+import UrlInput from './components/UrlInput';
 import ResultsDisplay from './components/ResultsDisplay';
 
 // Default to localhost in dev, override for production
@@ -11,7 +12,7 @@ function App() {
   const [results, setResults] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [mode, setMode] = useState('form'); // 'form' or 'image'
+  const [mode, setMode] = useState('form'); // 'form', 'image', or 'url'
 
   const handleAnalyze = async (formData) => {
     setLoading(true);
@@ -61,6 +62,30 @@ function App() {
     }
   };
 
+  const handleUrlAnalyze = async (urlData) => {
+    setLoading(true);
+    setError(null);
+    setResults(null);
+
+    try {
+      const response = await axios.post(`${API_URL}/predict-url`, urlData, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 30000,
+      });
+      setResults(response.data);
+    } catch (err) {
+      if (err.response) {
+        setError(`Server error: ${err.response.data.detail || err.response.statusText}`);
+      } else if (err.request) {
+        setError('Cannot connect to the server. Make sure the backend is running on port 8000.');
+      } else {
+        setError(`Error: ${err.message}`);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const switchMode = (newMode) => {
     setMode(newMode);
     setResults(null);
@@ -94,14 +119,24 @@ function App() {
             className={`mode-tab ${mode === 'image' ? 'active' : ''}`}
             onClick={() => switchMode('image')}
           >
-            📸 Screenshot Upload
+          📸 Screenshot Upload
+          </button>
+          <button
+            className={`mode-tab ${mode === 'url' ? 'active' : ''}`}
+            onClick={() => switchMode('url')}
+          >
+            🔗 URL Check
           </button>
         </div>
 
-        {mode === 'form' ? (
+        {mode === 'form' && (
           <JobForm onSubmit={handleAnalyze} loading={loading} />
-        ) : (
+        )}
+        {mode === 'image' && (
           <ImageUpload onSubmit={handleImageAnalyze} loading={loading} />
+        )}
+        {mode === 'url' && (
+          <UrlInput onSubmit={handleUrlAnalyze} loading={loading} />
         )}
 
         {error && (

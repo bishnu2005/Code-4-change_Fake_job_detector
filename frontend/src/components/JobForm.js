@@ -11,6 +11,8 @@ const initialFormState = {
   requirements: '',
   benefits: '',
   salary_range: '',
+  contact_email: '',
+  job_url: '',
   location: '',
   department: '',
   employment_type: '',
@@ -95,6 +97,28 @@ function JobForm({ onSubmit, loading }) {
               value={form.salary_range}
               onChange={handleChange}
               placeholder="e.g. 50000-80000"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Contact Email</label>
+            <input
+              type="email"
+              name="contact_email"
+              value={form.contact_email}
+              onChange={handleChange}
+              placeholder="e.g. hr@company.com"
+            />
+          </div>
+
+          <div className="form-group">
+            <label>Job Posting URL</label>
+            <input
+              type="url"
+              name="job_url"
+              value={form.job_url}
+              onChange={handleChange}
+              placeholder="e.g. https://careers.company.com/job/123"
             />
           </div>
 

@@ -6,10 +6,14 @@ FastAPI server that loads the trained ML model and serves predictions.
 import os
 import sys
 import io
+import re
+from dotenv import load_dotenv
+
+load_dotenv()  # Load .env for MONGO_URI etc.
 import joblib
 import numpy as np
 import pandas as pd
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, List
@@ -30,6 +34,13 @@ from feature_engineering import (
     parse_salary,
     detect_salary_anomaly,
 )
+
+# Import email domain analyzer (lives in backend/)
+BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, BACKEND_DIR)
+from email_analyzer import analyze_email_domain
+from url_analyzer import analyze_url
+from database import submit_report, get_community_reputation, get_top_reported, is_connected
 
 
 # ── App Setup ────────────────────────────────────────────────────────────
@@ -91,6 +102,55 @@ class JobPostingRequest(BaseModel):
     telecommuting: Optional[int] = Field(0, description="1 if remote, 0 otherwise")
     has_company_logo: Optional[int] = Field(1, description="1 if company has logo")
     has_questions: Optional[int] = Field(1, description="1 if posting has screening questions")
+    contact_email: Optional[str] = Field("", description="Recruiter/contact email address")
+    job_url: Optional[str] = Field("", description="URL of the job posting")
+
+
+class UrlRequest(BaseModel):
+    """Input schema for URL-only analysis."""
+    job_url: str = Field(..., description="URL of the job posting to analyze")
+    company_name: Optional[str] = Field("", description="Company name for domain matching")
+
+
+class ReportRequest(BaseModel):
+    """Input schema for community scam reports."""
+    entity_type: str = Field(..., description="Type: company, email, or url")
+    entity_value: str = Field(..., description="Value to report")
+    report_reason: str = Field("", description="Reason for reporting")
+
+
+class EmailAnalysis(BaseModel):
+    """Email domain verification results."""
+    email_found: bool = False
+    email: str = ""
+    email_domain: str = ""
+    free_provider: bool = False
+    domain_matches_company: bool = True
+    suspicious_pattern: bool = False
+
+
+class UrlAnalysis(BaseModel):
+    """URL legitimacy verification results."""
+    url_provided: bool = False
+    url: str = ""
+    domain: str = ""
+    ip_based: bool = False
+    free_hosting: bool = False
+    suspicious_keywords: List[str] = []
+    domain_matches_company: bool = True
+    excessive_subdomains: bool = False
+    long_domain: bool = False
+    numeric_substitutions: bool = False
+    dns_resolves: bool = True
+    ssl_error: bool = False
+    reachable: bool = False
+
+
+class CommunityReports(BaseModel):
+    """Community scam report summary."""
+    total_reports: int = 0
+    flagged_as_frequent_scam: bool = False
+    risk_boost_applied: int = 0
 
 
 class RiskBreakdown(BaseModel):
@@ -104,6 +164,9 @@ class RiskBreakdown(BaseModel):
     telecommuting: bool
     description_length: int
     risk_factors: List[str]
+    email_analysis: EmailAnalysis = EmailAnalysis()
+    url_analysis: UrlAnalysis = UrlAnalysis()
+    community_reports: CommunityReports = CommunityReports()
 
 
 class PredictionResponse(BaseModel):
@@ -160,6 +223,37 @@ def generate_recommendations(risk_breakdown: dict, risk_score: int) -> List[str]
     if risk_breakdown["description_length"] < 100:
         recs.append("📄 Very short job description — legitimate postings usually have detailed descriptions.")
 
+    # Email domain recommendations
+    email_info = risk_breakdown.get("email_analysis", {})
+    if email_info.get("free_provider"):
+        recs.append(f"📧 Recruiter uses free email ({email_info['email_domain']}) — legitimate companies use corporate email.")
+    if not email_info.get("domain_matches_company", True):
+        recs.append("🔗 Email domain doesn't match company name — verify recruiter identity independently.")
+    if email_info.get("suspicious_pattern"):
+        recs.append(f"⚠️ Suspicious email domain pattern ({email_info['email_domain']}) — possible lookalike domain.")
+
+    # URL recommendations
+    url_info = risk_breakdown.get("url_analysis", {})
+    if url_info.get("url_provided"):
+        if url_info.get("ip_based"):
+            recs.append("🌐 URL uses an IP address instead of a domain — major red flag for phishing.")
+        if url_info.get("free_hosting"):
+            recs.append(f"🏗️ URL hosted on free platform ({url_info.get('domain', '')}) — legitimate companies use their own domains.")
+        if url_info.get("numeric_substitutions"):
+            recs.append(f"🔢 URL domain contains number substitutions ({url_info.get('domain', '')}) — possible impersonation.")
+        if not url_info.get("dns_resolves", True):
+            recs.append("❌ URL domain does not resolve — the website may not exist.")
+        if url_info.get("ssl_error"):
+            recs.append("🔓 SSL certificate error — the site may be insecure or fraudulent.")
+        if not url_info.get("domain_matches_company", True):
+            recs.append("🔗 URL domain doesn't match the company name — verify the posting source.")
+
+    # Community reports recommendations
+    community = risk_breakdown.get("community_reports", {})
+    if community.get("flagged_as_frequent_scam"):
+        count = community.get("total_reports", 0)
+        recs.append(f"🚨 This entity has been reported {count} times by community users — exercise extreme caution.")
+
     if risk_score <= 25:
         recs.append("✅ This posting appears legitimate, but always research the company independently.")
 
@@ -194,6 +288,40 @@ def build_risk_factors(breakdown: dict) -> List[str]:
     if breakdown["description_length"] < 100:
         factors.append("Very short description")
 
+    # Email domain risk factors
+    email_info = breakdown.get("email_analysis", {})
+    if email_info.get("free_provider"):
+        factors.append(f"Recruiter uses free email provider ({email_info.get('email_domain', '')})")
+    if not email_info.get("domain_matches_company", True):
+        factors.append("Email domain doesn't match company name")
+    if email_info.get("suspicious_pattern"):
+        factors.append(f"Suspicious lookalike domain ({email_info.get('email_domain', '')})")
+
+    # URL risk factors
+    url_info = breakdown.get("url_analysis", {})
+    if url_info.get("url_provided"):
+        if url_info.get("ip_based"):
+            factors.append("URL uses IP address instead of domain")
+        if url_info.get("free_hosting"):
+            factors.append(f"URL hosted on free platform ({url_info.get('domain', '')})")
+        if url_info.get("numeric_substitutions"):
+            factors.append(f"URL contains lookalike characters ({url_info.get('domain', '')})")
+        if url_info.get("excessive_subdomains"):
+            factors.append("Excessive subdomains in URL")
+        if not url_info.get("dns_resolves", True):
+            factors.append("URL domain does not resolve (DNS failure)")
+        if url_info.get("ssl_error"):
+            factors.append("SSL certificate error on URL")
+        if not url_info.get("domain_matches_company", True):
+            factors.append("URL domain doesn't match company name")
+        if url_info.get("suspicious_keywords"):
+            factors.append(f"Suspicious keywords in URL: {', '.join(url_info['suspicious_keywords'][:3])}")
+
+    # Community report factors
+    community = breakdown.get("community_reports", {})
+    if community.get("flagged_as_frequent_scam"):
+        factors.append(f"Reported {community.get('total_reports', 0)} times by community")
+
     return factors
 
 
@@ -227,6 +355,19 @@ def analyze_job_data(data: dict) -> PredictionResponse:
     sal_min, sal_max, has_sal = parse_salary(data.get("salary_range", ""))
     sal_anomaly = detect_salary_anomaly(sal_min, sal_max)
 
+    # Email domain analysis
+    email_result = analyze_email_domain(
+        contact_email=data.get("contact_email", ""),
+        raw_text=data.get("description", ""),
+        company_name=data.get("company_profile", ""),
+    )
+
+    # URL analysis
+    url_result = analyze_url(
+        url=data.get("job_url", ""),
+        company_name=data.get("company_profile", ""),
+    )
+
     breakdown_dict = {
         "scam_keywords_found": scam_keywords,
         "missing_fields_count": missing_count,
@@ -236,7 +377,38 @@ def analyze_job_data(data: dict) -> PredictionResponse:
         "has_questions": bool(data.get("has_questions", 1)),
         "telecommuting": bool(data.get("telecommuting", 0)),
         "description_length": len(data.get("description", "")),
+        "email_analysis": {
+            "email_found": email_result["email_found"],
+            "email": email_result["email"],
+            "email_domain": email_result["email_domain"],
+            "free_provider": email_result["free_provider"],
+            "domain_matches_company": email_result["domain_matches_company"],
+            "suspicious_pattern": email_result["suspicious_pattern"],
+        },
+        "url_analysis": {
+            "url_provided": url_result["url_provided"],
+            "url": url_result["url"],
+            "domain": url_result["domain"],
+            "ip_based": url_result["ip_based"],
+            "free_hosting": url_result["free_hosting"],
+            "suspicious_keywords": url_result["suspicious_keywords"],
+            "domain_matches_company": url_result["domain_matches_company"],
+            "excessive_subdomains": url_result["excessive_subdomains"],
+            "long_domain": url_result.get("long_domain", False),
+            "numeric_substitutions": url_result["numeric_substitutions"],
+            "dns_resolves": url_result["dns_resolves"],
+            "ssl_error": url_result["ssl_error"],
+            "reachable": url_result["reachable"],
+        },
     }
+
+    # Community reputation check
+    community_rep = get_community_reputation(
+        company_name=data.get("company_profile", ""),
+        email=email_result.get("email", ""),
+        url_domain=url_result.get("domain", ""),
+    )
+    breakdown_dict["community_reports"] = community_rep
 
     # Compute hybrid risk score (ML probability + rule-based factors)
     rule_score = 0
@@ -256,6 +428,15 @@ def analyze_job_data(data: dict) -> PredictionResponse:
         rule_score += 5
     if len(data.get("description", "")) < 100:
         rule_score += 10
+
+    # Email domain risk contribution
+    rule_score += email_result.get("domain_risk_score", 0)
+
+    # URL risk contribution
+    rule_score += url_result.get("url_risk_score", 0)
+
+    # Community reputation risk contribution
+    rule_score += community_rep.get("risk_boost_applied", 0)
 
     # Hybrid score: 60% ML, 40% rules
     risk_score = int(fraud_prob * 60 + min(rule_score, 40))
@@ -300,6 +481,8 @@ async def predict(job: JobPostingRequest):
         "telecommuting": job.telecommuting or 0,
         "has_company_logo": job.has_company_logo if job.has_company_logo is not None else 1,
         "has_questions": job.has_questions if job.has_questions is not None else 1,
+        "contact_email": job.contact_email or "",
+        "job_url": job.job_url or "",
         "fraudulent": 0,
     }
     return analyze_job_data(data)
@@ -367,6 +550,87 @@ async def predict_image(file: UploadFile = File(...)):
     return analyze_job_data(data)
 
 
+# ── URL Prediction Endpoint ──────────────────────────────────────────────
+@app.post("/predict-url", response_model=PredictionResponse)
+async def predict_url(req: UrlRequest):
+    """
+    Analyze a job posting URL for legitimacy.
+    Performs URL analysis + optional scrape, then runs ML prediction on scraped text.
+    """
+    from url_analyzer import analyze_url as _analyze_url, normalize_url
+    import requests as req_lib
+
+    url = normalize_url(req.job_url)
+    if not url:
+        raise HTTPException(status_code=400, detail="job_url is required.")
+
+    # Scrape page text for ML analysis
+    scraped_text = ""
+    try:
+        resp = req_lib.get(url, timeout=5, headers={"User-Agent": "Mozilla/5.0 FakeJobDetector/1.0"})
+        if resp.status_code == 200:
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(resp.text[:50000], "html.parser")
+            # Remove script/style
+            for tag in soup(["script", "style", "nav", "footer"]):
+                tag.decompose()
+            scraped_text = soup.get_text(separator=" ", strip=True)[:5000]
+    except Exception:
+        pass
+
+    description = scraped_text if len(scraped_text) > 20 else "Job posting URL submitted for analysis."
+
+    data = {
+        "title": "",
+        "company_profile": req.company_name or "",
+        "description": description,
+        "requirements": "",
+        "benefits": "",
+        "salary_range": "",
+        "location": "",
+        "department": "",
+        "employment_type": "",
+        "required_experience": "",
+        "required_education": "",
+        "industry": "",
+        "function": "",
+        "telecommuting": 0,
+        "has_company_logo": 0,
+        "has_questions": 0,
+        "contact_email": "",
+        "job_url": req.job_url,
+        "fraudulent": 0,
+    }
+    return analyze_job_data(data)
+
+
+# ── Community Report Endpoint ────────────────────────────────────────────
+@app.post("/report")
+async def report_entity(req: ReportRequest, request: Request):
+    """
+    Submit a community scam report.
+    """
+    # Get reporter IP
+    reporter_ip = request.client.host if request.client else "unknown"
+
+    result = submit_report(
+        entity_type=req.entity_type,
+        entity_value=req.entity_value,
+        report_reason=req.report_reason,
+        reporter_ip=reporter_ip,
+    )
+    if not result["success"]:
+        raise HTTPException(status_code=400, detail=result["message"])
+    return result
+
+
+# ── Top Reported Endpoint ────────────────────────────────────────────────
+@app.get("/top-reported")
+async def top_reported():
+    """Get top 10 most reported entities."""
+    return get_top_reported(limit=10)
+
+
 # ── Health Check ─────────────────────────────────────────────────────────
 @app.get("/health")
 async def health():
@@ -375,6 +639,7 @@ async def health():
         "status": "healthy",
         "model_loaded": model is not None,
         "vectorizer_loaded": vectorizer is not None,
+        "db_connected": is_connected(),
     }
 
 
@@ -387,6 +652,9 @@ async def root():
         "endpoints": {
             "POST /predict": "Analyze a job posting (JSON)",
             "POST /predict-image": "Analyze a job posting screenshot (OCR)",
+            "POST /predict-url": "Analyze a job posting URL",
+            "POST /report": "Submit a community scam report",
+            "GET /top-reported": "Top 10 most reported entities",
             "GET /health": "Health check",
             "GET /docs": "Interactive API docs (Swagger)",
         },
