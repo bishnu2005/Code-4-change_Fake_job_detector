@@ -1,1 +1,1 @@
-from .routes import router
+"""__init__ for api package."""

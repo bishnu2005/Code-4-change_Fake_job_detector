@@ -1,0 +1,44 @@
+﻿dart : Cannot negate 
+option 
+"--no-fatal-infos".
+At line:1 char:1
++ dart analyze 
+--no-fatal-infos 
+--no-fatal-warnings 
+2>&1 | Out-File -En 
+...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Cannot    
+ negate option "-    
+-no-fatal-infos"    
+.:String) [], Re    
+moteException
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+
+Usage: dart analyze 
+[arguments] 
+[<directory>]
+-h, --help           
+        Print this 
+usage information.
+    --fatal-infos    
+        Treat info 
+level issues as 
+fatal.
+    --[no-]fatal-warn
+ings    Treat 
+warning level issues 
+as fatal.
+                     
+        (defaults to 
+on)
+
+Run "dart help" to 
+see global options.

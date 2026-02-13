@@ -1,0 +1,202 @@
+[
+    {
+        "domain": "secure-login-verify.tk",
+        "source": "phishing_list",
+        "risk_score": 95
+    },
+    {
+        "domain": "paypal-account-update.ml",
+        "source": "phishing_list",
+        "risk_score": 95
+    },
+    {
+        "domain": "amazon-prize-winner.ga",
+        "source": "phishing_list",
+        "risk_score": 95
+    },
+    {
+        "domain": "google-career-fastapply.xyz",
+        "source": "phishing_list",
+        "risk_score": 90
+    },
+    {
+        "domain": "microsoft-jobs-hiring.tk",
+        "source": "phishing_list",
+        "risk_score": 90
+    },
+    {
+        "domain": "apple-id-recovery.cf",
+        "source": "phishing_list",
+        "risk_score": 95
+    },
+    {
+        "domain": "netflix-billing-update.gq",
+        "source": "phishing_list",
+        "risk_score": 95
+    },
+    {
+        "domain": "work-from-home-easy.xyz",
+        "source": "scam_tracker",
+        "risk_score": 85
+    },
+    {
+        "domain": "earn-money-now-fast.top",
+        "source": "scam_tracker",
+        "risk_score": 85
+    },
+    {
+        "domain": "crypto-investment-daily.buzz",
+        "source": "scam_tracker",
+        "risk_score": 90
+    },
+    {
+        "domain": "guaranteed-income-jobs.click",
+        "source": "scam_tracker",
+        "risk_score": 85
+    },
+    {
+        "domain": "no-experience-hiring.work",
+        "source": "scam_tracker",
+        "risk_score": 80
+    },
+    {
+        "domain": "urgent-job-apply-now.club",
+        "source": "scam_tracker",
+        "risk_score": 80
+    },
+    {
+        "domain": "free-money-transfer.ml",
+        "source": "phishing_list",
+        "risk_score": 95
+    },
+    {
+        "domain": "bank-verify-account.tk",
+        "source": "phishing_list",
+        "risk_score": 95
+    },
+    {
+        "domain": "linkedin-job-verify.ga",
+        "source": "phishing_list",
+        "risk_score": 90
+    },
+    {
+        "domain": "indeed-resume-update.cf",
+        "source": "phishing_list",
+        "risk_score": 90
+    },
+    {
+        "domain": "telegram-crypto-earn.xyz",
+        "source": "scam_tracker",
+        "risk_score": 90
+    },
+    {
+        "domain": "gift-card-reward-claim.top",
+        "source": "scam_tracker",
+        "risk_score": 85
+    },
+    {
+        "domain": "data-entry-home-jobs.buzz",
+        "source": "scam_tracker",
+        "risk_score": 80
+    },
+    {
+        "domain": "registration-fee-apply.xyz",
+        "source": "scam_tracker",
+        "risk_score": 90
+    },
+    {
+        "domain": "whatsapp-job-offer.tk",
+        "source": "scam_tracker",
+        "risk_score": 85
+    },
+    {
+        "domain": "survey-for-cash-now.ml",
+        "source": "scam_tracker",
+        "risk_score": 80
+    },
+    {
+        "domain": "facebook-hiring-2024.ga",
+        "source": "phishing_list",
+        "risk_score": 90
+    },
+    {
+        "domain": "remote-job-global.click",
+        "source": "scam_tracker",
+        "risk_score": 80
+    },
+    {
+        "domain": "easy-apply-careers.work",
+        "source": "scam_tracker",
+        "risk_score": 75
+    },
+    {
+        "domain": "instant-hire-online.club",
+        "source": "scam_tracker",
+        "risk_score": 80
+    },
+    {
+        "domain": "wire-payment-job.xyz",
+        "source": "scam_tracker",
+        "risk_score": 90
+    },
+    {
+        "domain": "verify-identity-login.cf",
+        "source": "phishing_list",
+        "risk_score": 95
+    },
+    {
+        "domain": "account-suspended-fix.gq",
+        "source": "phishing_list",
+        "risk_score": 95
+    },
+    {
+        "domain": "hiring-remote-work.top",
+        "source": "scam_tracker",
+        "risk_score": 75
+    },
+    {
+        "domain": "bitcoin-trading-earn.buzz",
+        "source": "scam_tracker",
+        "risk_score": 90
+    },
+    {
+        "domain": "lottery-winner-claim.tk",
+        "source": "phishing_list",
+        "risk_score": 95
+    },
+    {
+        "domain": "govt-job-apply-free.ml",
+        "source": "scam_tracker",
+        "risk_score": 85
+    },
+    {
+        "domain": "online-typing-job-home.xyz",
+        "source": "scam_tracker",
+        "risk_score": 80
+    },
+    {
+        "domain": "get-paid-daily-task.click",
+        "source": "scam_tracker",
+        "risk_score": 80
+    },
+    {
+        "domain": "amazon-delivery-partner.ga",
+        "source": "phishing_list",
+        "risk_score": 90
+    },
+    {
+        "domain": "uber-driver-signup-bonus.cf",
+        "source": "phishing_list",
+        "risk_score": 90
+    },
+    {
+        "domain": "investment-returns-daily.top",
+        "source": "scam_tracker",
+        "risk_score": 90
+    },
+    {
+        "domain": "freshers-walk-in-interview.xyz",
+        "source": "scam_tracker",
+        "risk_score": 75
+    }
+]

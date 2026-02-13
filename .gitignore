@@ -16,6 +16,11 @@ build/
 venv/
 env/
 
+# ── Database ──────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
 # ── ML Artifacts (large binary files) ─────────────────
 backend/artifacts/*.pkl
 backend/artifacts/*.joblib
