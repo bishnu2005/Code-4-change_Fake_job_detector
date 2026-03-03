@@ -83,7 +83,9 @@ app.add_middleware(
 )
 
 # ── Routes ───────────────────────────────────────────────────────
-app.include_router(analyze_router)
-app.include_router(feed_router)
-app.include_router(users_router)
-app.include_router(health_router)
+from app.api import routes_analyze, routes_users, routes_health, auth_routes
+
+app.include_router(routes_health.router)
+app.include_router(auth_routes.router)  # Register Auth
+app.include_router(routes_analyze.router)
+app.include_router(routes_users.router)

@@ -11,6 +11,7 @@ class Company(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(255), nullable=False, index=True)
     official_domain = Column(String(255), nullable=False)
+    logo_url = Column(String(500), nullable=True)
     verification_status = Column(
         String(20), nullable=False, default="trusted"
     )  # trusted | unknown | flagged

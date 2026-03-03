@@ -101,6 +101,7 @@ class CommunityResult {
 
 class DomainResult {
   final String? extractedDomain;
+  final bool deceptive;
   final int? ageDays;
   final int blacklistHits;
   final String safeBrowsing;
@@ -112,6 +113,7 @@ class DomainResult {
 
   DomainResult({
     this.extractedDomain,
+    this.deceptive = false,
     this.ageDays,
     this.blacklistHits = 0,
     this.safeBrowsing = 'skipped',
@@ -125,6 +127,7 @@ class DomainResult {
   factory DomainResult.fromJson(Map<String, dynamic> json) {
     return DomainResult(
       extractedDomain: json['extracted_domain'] as String?,
+      deceptive: json['deceptive'] as bool? ?? false,
       ageDays: json['age_days'] as int?,
       blacklistHits: json['blacklist_hits'] as int? ?? 0,
       safeBrowsing: json['safe_browsing'] as String? ?? 'skipped',

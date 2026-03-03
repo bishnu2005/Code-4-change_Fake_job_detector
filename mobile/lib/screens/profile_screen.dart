@@ -1,46 +1,27 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../models/user.dart';
-import '../services/api_service.dart';
+import '../services/auth_service.dart';
 
 /// Profile screen with login and user stats.
 class ProfileScreen extends StatefulWidget {
-  final User? user;
-  final ValueChanged<User> onLogin;
-
-  const ProfileScreen({super.key, this.user, required this.onLogin});
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final _usernameCtrl = TextEditingController();
   bool _loading = false;
-
-  Future<void> _login() async {
-    if (_usernameCtrl.text.trim().isEmpty) return;
-    setState(() => _loading = true);
-    try {
-      final user = await ApiService.loginOrCreate(_usernameCtrl.text.trim());
-      widget.onLogin(user);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthService>().userModel;
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-        child: widget.user == null ? _buildLogin() : _buildProfile(),
+        child: user == null ? _buildLogin() : _buildProfile(user),
       ),
     );
   }
@@ -56,14 +37,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(24),
-            border:
-                Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.25)),
+            border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.25)),
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(24),
             child: Image.asset(
               'assets/images/logo.png',
               fit: BoxFit.contain,
+              errorBuilder: (c, o, s) =>
+                  const Icon(Icons.person, color: Color(0xFF8B5CF6), size: 40),
             ),
           ),
         ),
@@ -73,43 +56,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               fontSize: 24,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.5,
+              color: Colors.white,
             )),
         const SizedBox(height: 8),
-        Text('Enter a username to get started',
+        Text('Sign in to continue',
             style: TextStyle(color: Colors.white.withValues(alpha: 0.4))),
         const SizedBox(height: 32),
 
-        // Glass username field
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
-              ),
-              child: TextField(
-                controller: _usernameCtrl,
-                decoration: InputDecoration(
-                  labelText: 'Username',
-                  labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.35)),
-                  prefixIcon: Icon(Icons.person_outline,
-                      color: Colors.white.withValues(alpha: 0.25)),
-                  filled: false,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                ),
-                onSubmitted: (_) => _login(),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(height: 20),
-
-        // Gradient button
+        // Google Login Button
         SizedBox(
           width: double.infinity,
           height: 56,
@@ -128,7 +82,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
             child: ElevatedButton(
-              onPressed: _loading ? null : _login,
+              onPressed: _loading
+                  ? null
+                  : () async {
+                      setState(() => _loading = true);
+                      await context.read<AuthService>().signInWithGoogle();
+                      if (mounted) setState(() => _loading = false);
+                    },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.transparent,
                 shadowColor: Colors.transparent,
@@ -143,12 +103,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       child: CircularProgressIndicator(
                           strokeWidth: 2, color: Colors.white),
                     )
-                  : const Text('Get Started',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        fontSize: 16,
-                      )),
+                  : const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.login_rounded, color: Colors.white),
+                        SizedBox(width: 12),
+                        Text('Continue with Google',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                              fontSize: 16,
+                            )),
+                      ],
+                    ),
             ),
           ),
         ),
@@ -156,8 +123,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildProfile() {
-    final user = widget.user!;
+  Widget _buildProfile(User user) {
     return Column(
       children: [
         const SizedBox(height: 20),
@@ -168,18 +134,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
           decoration: BoxDecoration(
             color: const Color(0xFF8B5CF6).withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(24),
-            border:
-                Border.all(color: const Color(0xFF8B5CF6).withValues(alpha: 0.25)),
+            border: Border.all(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.25)),
           ),
           child: Center(
-            child: Text(
-              user.username[0].toUpperCase(),
-              style: const TextStyle(
-                fontSize: 32,
-                color: Color(0xFF8B5CF6),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            child: user.avatarUrl != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.network(user.avatarUrl!, fit: BoxFit.cover),
+                  )
+                : Text(
+                    user.username.isNotEmpty
+                        ? user.username[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      fontSize: 32,
+                      color: Color(0xFF8B5CF6),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ),
         const SizedBox(height: 16),
@@ -188,11 +161,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
               fontSize: 22,
               fontWeight: FontWeight.w700,
               letterSpacing: -0.3,
+              color: Colors.white,
             )),
         const SizedBox(height: 4),
         Text('Joined ${_formatDate(user.createdAt)}',
-            style:
-                TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 12)),
+            style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.3), fontSize: 12)),
         const SizedBox(height: 32),
 
         // Stats glass cards
@@ -236,7 +210,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Reputation Level',
-                      style: TextStyle(fontWeight: FontWeight.w700)),
+                      style: TextStyle(
+                          fontWeight: FontWeight.w700, color: Colors.white)),
                   const SizedBox(height: 14),
                   ClipRRect(
                     borderRadius: BorderRadius.circular(6),
@@ -261,17 +236,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
         ),
+
+        const SizedBox(height: 24),
+
+        // Sign Out Button
+        TextButton.icon(
+          onPressed: () => context.read<AuthService>().signOut(),
+          icon: const Icon(Icons.logout, color: Colors.white54),
+          label:
+              const Text('Sign Out', style: TextStyle(color: Colors.white54)),
+        ),
       ],
     );
   }
 
-  String _formatDate(String iso) {
-    try {
-      final dt = DateTime.parse(iso);
-      return '${dt.day}/${dt.month}/${dt.year}';
-    } catch (_) {
-      return '';
-    }
+  String _formatDate(DateTime dt) {
+    return '${dt.day}/${dt.month}/${dt.year}';
   }
 
   Color _repColor(double score) {

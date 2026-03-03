@@ -1,3 +1,4 @@
+
 """
 Analyze API route — unified /analyze endpoint using orchestrator.
 """
@@ -9,10 +10,19 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.schemas.analyze import AnalyzeResponse
 from app.services.orchestrator import run_pipeline
+from app.services.search_service import hybrid_search
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Analysis"])
+
+
+@router.get("/summary", response_model=dict)
+def get_analysis_summary(query: str, db: Session = Depends(get_db)):
+    """
+    Get 3-layer intelligence summary: Verification, Community, Web.
+    """
+    return hybrid_search(db, query)
 
 
 @router.post("/analyze", response_model=AnalyzeResponse)

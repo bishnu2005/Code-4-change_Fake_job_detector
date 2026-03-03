@@ -38,6 +38,11 @@ def compute_final_risk(
     if verification.status == "flagged":
         return FinalRisk(score=85.0, level="High Risk")
 
+    # Deceptive domain (e.g. google-careers.xyz) → High Risk Boost
+    deceptive_risk = 0.0
+    if verification.deceptive:
+        deceptive_risk = 20.0
+
     # Collect weighted scores
     scores: list[tuple[float, float]] = []  # (score, weight)
 
@@ -86,7 +91,7 @@ def compute_final_risk(
     else:
         base_score = 30.0  # no signals
 
-    final_score = round(min(base_score + content_boost, 100), 1)
+    final_score = round(min(base_score + content_boost + deceptive_risk, 100), 1)
 
     return FinalRisk(
         score=final_score,

@@ -77,6 +77,10 @@ def run_pipeline(
 
     # ── Layer 3: Domain Intelligence ─────────────────────────────
     domain = analyze_domain(db, url, company_name)
+    
+    # Propagate deceptive flag from Layer 1 to Layer 3 result for frontend visibility
+    if verification.deceptive:
+        domain.deceptive = True
 
     if domain.extracted_domain:
         if domain.blacklist_hits > 0:

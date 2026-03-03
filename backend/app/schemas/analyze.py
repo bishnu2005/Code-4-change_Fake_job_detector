@@ -8,6 +8,7 @@ class VerificationResult(BaseModel):
     company_name: str | None = None
     official_domain: str | None = None
     domain_match: bool | None = None
+    deceptive: bool = False
 
 
 class CommunityResult(BaseModel):
@@ -22,6 +23,7 @@ class CommunityResult(BaseModel):
 class DomainResult(BaseModel):
     """Layer 3: Domain intelligence."""
     extracted_domain: str | None = None
+    deceptive: bool = False
     age_days: int | None = None
     blacklist_hits: int = 0
     safe_browsing: str = "skipped"

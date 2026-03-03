@@ -8,13 +8,13 @@ import '../models/user.dart';
 /// Central API service for all backend calls.
 class ApiService {
   // Change this to your machine's IP for real device testing
-  static const String _baseUrl = 'http://10.0.2.2:8000';
+  static const String baseUrl = 'http://10.0.2.2:8000';
 
   // ── Users ────────────────────────────────────────────────────
 
   static Future<User> loginOrCreate(String username) async {
     final resp = await http.post(
-      Uri.parse('$_baseUrl/users/login'),
+      Uri.parse('$baseUrl/users/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'username': username}),
     );
@@ -25,7 +25,7 @@ class ApiService {
   }
 
   static Future<User> getUser(int userId) async {
-    final resp = await http.get(Uri.parse('$_baseUrl/users/$userId'));
+    final resp = await http.get(Uri.parse('$baseUrl/users/$userId'));
     if (resp.statusCode != 200) {
       throw Exception('Failed to get user');
     }
@@ -47,7 +47,7 @@ class ApiService {
     if (cursor != null) params['cursor'] = cursor.toString();
     if (search.isNotEmpty) params['search'] = search;
 
-    final uri = Uri.parse('$_baseUrl/feed').replace(queryParameters: params);
+    final uri = Uri.parse('$baseUrl/feed').replace(queryParameters: params);
     final resp = await http.get(uri);
     if (resp.statusCode != 200) throw Exception('Feed fetch failed');
 
@@ -70,7 +70,7 @@ class ApiService {
     required String verdict,
   }) async {
     final resp = await http.post(
-      Uri.parse('$_baseUrl/feed'),
+      Uri.parse('$baseUrl/feed'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'user_id': userId,
@@ -91,7 +91,7 @@ class ApiService {
     required String voteType,
   }) async {
     final resp = await http.post(
-      Uri.parse('$_baseUrl/feed/$reportId/vote'),
+      Uri.parse('$baseUrl/feed/$reportId/vote'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'user_id': userId, 'vote_type': voteType}),
     );
@@ -109,7 +109,7 @@ class ApiService {
     XFile? image,
   }) async {
     final request =
-        http.MultipartRequest('POST', Uri.parse('$_baseUrl/analyze'));
+        http.MultipartRequest('POST', Uri.parse('$baseUrl/analyze'));
 
     if (companyName.isNotEmpty) request.fields['company_name'] = companyName;
     if (jobDescription.isNotEmpty) {
